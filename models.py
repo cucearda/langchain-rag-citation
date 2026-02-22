@@ -13,10 +13,10 @@ class Embedding:
     embedding: List[float]
 
 @dataclass
-class RetrievedDocumentsForClaim:
-    DocumentForClaim: List[DocumentForClaim]
-
-@dataclass
 class DocumentForClaim:
     claim: str
     title: str
+
+@dataclass
+class RetrievedDocumentsForClaim:
+    documents: List[DocumentForClaim]
