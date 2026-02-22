@@ -28,11 +28,7 @@ def split_chunks(docs: dict) -> list:
         for i, text in enumerate(texts):
             chunk = Chunk(
                 text=text,
-                paragraph=doc.metadata["para"],
-                pages=doc.metadata["pages"],
-                section_title=doc.metadata["section_title"],
-                section_number=doc.metadata["section_number"],
-                paper_title=doc.metadata["paper_title"],
+                metadata=doc.metadata
             )
             chunks.append(chunk)
     return chunks
