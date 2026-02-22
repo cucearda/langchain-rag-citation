@@ -35,3 +35,9 @@ def get_vector_store():
     embeddings = get_embeddings()
 
     return PineconeVectorStore(index=index, embedding=embeddings)
+
+def get_retriever(vector_store: PineconeVectorStore):
+    retriever = vector_store.as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={"k": 3, "score_threshold": 0.5}
+    )
