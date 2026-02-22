@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 @dataclass
 class Chunk:
@@ -9,3 +10,9 @@ class Chunk:
     section_title: str
     section_number: str
     paper_title: str
+
+@dataclass
+class Embedding:
+    chunk: Chunk
+    embedding: List[float]
+
