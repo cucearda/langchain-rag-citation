@@ -3,6 +3,7 @@ from langchain.agents import create_agent
 from langchain_core.tools import tool
 
 from vector_store import get_vector_store
+from models import Citation, CitatorResult
 
 vector_store = get_vector_store()
 
@@ -51,52 +52,75 @@ document_retriever_agent = create_agent(
     system_prompt=RETRIEVER_SYSTEM_PROMPT,
 )
 
-CITATOR_SYSTEM_PROMPT = """You are a research assistant. Given a paragraph and a set of source documents, your task is to insert appropriate APA (7th edition) in-text citations into the paragraph.
+CITATOR_SYSTEM_PROMPT = """You are a research assistant. Given a paragraph and a set of source documents, identify every claim in the paragraph that is supported by the provided documents.
 
-Carefully analyze the paragraph and the provided documents. Match claims, facts, or ideas in the paragraph with the most relevant supporting document(s). Only cite information that is clearly supported by the provided documents. 
+For each supported claim:
+1. Determine the exact character range (start, end) of the claim text within the paragraph (0-indexed, end is exclusive).
+2. State why you chose this source for this claim.
+3. Copy a verbatim excerpt from the source document that directly supports the claim.
+4. Explain how that excerpt supports the claim.
 
-If no documents are provided, or if a claim is not supported by the documents, do NOT invent or suggest citations.
+Only produce citations for claims that are clearly supported by the provided documents. Do not invent citations.
 
-Use APA 7th edition in-text citation style:
-- One author: (Author, Year)
-- Two authors: (Author & Author, Year)
-- Three or more authors: (Author et al., Year)
-- Direct quote: (Author, Year, p. X)
-- If citing a specific section instead of a page number (e.g., webpage): (Author, Year, Section Name)
-
-Insert citations naturally at the end of the relevant sentence or clause, before the period.
-
-Suggest as many citations as are appropriate and supported by the documents.
-
-Example:
-
-Input paragraph:
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-
-Output:
-Lorem ipsum dolor sit amet, consectetur adipiscing elit (Farmer, 2009). Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat (Tóibín, 2009, p. 52).
+You will return a structured list of Citation objects — one per supported claim.
 """
 
-citator_agent = create_agent(model, system_prompt=CITATOR_SYSTEM_PROMPT)
+citator_agent = create_agent(
+    model,
+    system_prompt=CITATOR_SYSTEM_PROMPT,
+    response_format=CitatorResult,
+)
 
 
-def invoke_citator(documents, paragraph):
-    """Invoke the citator agent with retrieved documents and a paragraph."""
+def invoke_retriever(paragraph: str):
+    """Invoke the retriever agent. Returns a list of retrieved documents."""
+    result = document_retriever_agent.invoke(
+        {"messages": [{"role": "user", "content": paragraph}]}
+    )
+    docs = []
+    for msg in result["messages"]:
+        if hasattr(msg, "artifact") and msg.artifact:
+            docs.extend(msg.artifact)
+    return docs
+
+
+def invoke_citator(documents, paragraph) -> list[Citation]:
+    """Invoke the citator agent. Returns a list of Citation objects."""
     document_messages = []
+    seen_ids = set()
     for doc in documents:
+        if doc.id in seen_ids:
+            continue
+        seen_ids.add(doc.id)
         document_messages.append({
             "role": "system",
             "content": (
-                f"Document title: {doc.metadata['paper_title']} "
-                f"Section: {doc.metadata['section_title']}, "
-                f"document text: {doc.metadata['text']}"
+                f"Paper title: {doc.metadata['paper_title']}\n"
+                f"Section title: {doc.metadata['section_title']},\n"
+                f"Pages: {doc.metadata['pages']}\n"
+                f"Authors: {doc.metadata['authors']}\n"
+                f"Year: {doc.metadata['year']}\n"
+                f"document text: {doc.page_content}\n"
             ),
         })
 
-    return citator_agent.invoke({"messages": [
+    result = citator_agent.invoke({"messages": [
         *document_messages,
         {"role": "system", "content": CITATOR_SYSTEM_PROMPT},
         {"role": "user", "content": f"Paragraph: {paragraph}"},
     ]})
+    return result["structured_response"].citations
+
+
+def reconstruct_cited_paragraph(paragraph: str, citations: list[Citation]) -> str:
+    """Reconstruct the cited paragraph by inserting APA markers at citation end positions.
+
+    Inserts right-to-left so earlier offsets remain valid.
+    """
+    sorted_citations = sorted(citations, key=lambda c: c.end, reverse=True)
+    result = paragraph
+    for citation in sorted_citations:
+        first_author = citation.source.authors.split(",")[0].strip()
+        apa_marker = f" ({first_author}, {citation.source.year})"
+        result = result[:citation.end] + apa_marker + result[citation.end:]
+    return result
