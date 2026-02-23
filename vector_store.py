@@ -41,3 +41,26 @@ def get_retriever(vector_store: PineconeVectorStore):
         search_type="similarity_score_threshold",
         search_kwargs={"k": 3, "score_threshold": 0.5}
     )
+
+
+def delete_document_chunks(index, doc_id: str) -> int:
+    result = index.query(
+        vector=[0.0] * 1024,
+        top_k=10000,
+        filter={"doc_id": {"$eq": doc_id}},
+        include_metadata=False,
+    )
+    ids = [m["id"] for m in result["matches"]]
+    if ids:
+        index.delete(ids=ids)
+    return len(ids)
+
+
+def list_document_chunks(index, doc_id: str) -> list[dict]:
+    result = index.query(
+        vector=[0.0] * 1024,
+        top_k=10000,
+        filter={"doc_id": {"$eq": doc_id}},
+        include_metadata=True,
+    )
+    return result.get("matches", [])

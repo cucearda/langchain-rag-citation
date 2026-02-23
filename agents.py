@@ -51,29 +51,32 @@ document_retriever_agent = create_agent(
     system_prompt=RETRIEVER_SYSTEM_PROMPT,
 )
 
-CITATOR_SYSTEM_PROMPT = """You are a research assistant. Given a paragraph and documents, you will use the documents to cite the paragraph.
-Analyze the given paragraph and documents. Make logical citations matching the claims in the paragraph to the documents.
+CITATOR_SYSTEM_PROMPT = """You are a research assistant. Given a paragraph and a set of source documents, your task is to insert appropriate APA (7th edition) in-text citations into the paragraph.
 
-Suggest as many citations as you see fit
+Carefully analyze the paragraph and the provided documents. Match claims, facts, or ideas in the paragraph with the most relevant supporting document(s). Only cite information that is clearly supported by the provided documents. 
 
-As the response add the citations in the following format:
+If no documents are provided, or if a claim is not supported by the documents, do NOT invent or suggest citations.
+
+Use APA 7th edition in-text citation style:
+- One author: (Author, Year)
+- Two authors: (Author & Author, Year)
+- Three or more authors: (Author et al., Year)
+- Direct quote: (Author, Year, p. X)
+- If citing a specific section instead of a page number (e.g., webpage): (Author, Year, Section Name)
+
+Insert citations naturally at the end of the relevant sentence or clause, before the period.
+
+Suggest as many citations as are appropriate and supported by the documents.
 
 Example:
+
 Input paragraph:
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
 Output:
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. (Citation Suggestion1: Paper Title1, Section Title1) Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Lorem ipsum dolor sit amet, consectetur adipiscing elit (Citation Suggestion2: Paper Title2, Section Title2). Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit (Farmer, 2009). Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat (Tóibín, 2009, p. 52).
 """
 
 citator_agent = create_agent(model, system_prompt=CITATOR_SYSTEM_PROMPT)
