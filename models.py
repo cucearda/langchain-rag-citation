@@ -7,7 +7,6 @@ class Chunk(BaseModel):
     text: str
     metadata: dict
 
-
 class CitationSource(BaseModel):
     """Metadata of the cited document."""
     paper_title: str = Field(description="Title of the cited paper")
@@ -16,7 +15,6 @@ class CitationSource(BaseModel):
     section_title: str = Field(description="Section title where the cited text comes from")
     section_number: Optional[str] = Field(default=None, description="Section number if available")
     pages: Optional[str] = Field(default=None, description="Page numbers if available")
-
 
 class Citation(BaseModel):
     """A single citation for a specific span of text in the paragraph."""
@@ -27,7 +25,27 @@ class Citation(BaseModel):
     relevant_quote: str = Field(description="Verbatim excerpt from the source document that supports the claim")
     relevance_explanation: str = Field(description="Explanation of how this quote supports the claim in the paragraph")
 
-
 class CitatorResult(BaseModel):
     """Structured output of the citator agent."""
     citations: list[Citation] = Field(description="All citations found for the paragraph, one per supported claim")
+
+
+from datetime import datetime
+
+
+class ProjectCreate(BaseModel):
+    name: str
+
+
+class Project(BaseModel):
+    id: str
+    name: str
+    namespace: str
+    created_at: datetime
+
+
+class DocumentMeta(BaseModel):
+    id: str
+    filename: str
+    chunks_indexed: int
+    created_at: datetime
