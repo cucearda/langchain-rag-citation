@@ -1,11 +1,9 @@
+# agents.py
 from langchain_anthropic import ChatAnthropic
 from langchain.agents import create_agent
 from langchain_core.tools import tool
 
-from vector_store import get_vector_store
 from models import Citation, CitatorResult
-
-vector_store = get_vector_store()
 
 retrieve_documents_for_claim_schema = {
     "type": "object",
@@ -16,40 +14,11 @@ retrieve_documents_for_claim_schema = {
     "required": ["claim", "k"],
 }
 
-
-@tool(
-    description="Retrieve top k documents for a given claim from the vector store",
-    args_schema=retrieve_documents_for_claim_schema,
-    response_format="content_and_artifact",
-)
-def retrieve_documents_for_claim(claim: str, k: int):
-    """Retrieve documents for a given claim."""
-    retriever = vector_store.as_retriever(
-        search_type="similarity_score_threshold",
-        search_kwargs={"k": k, "score_threshold": 0.5},
-    )
-    response = retriever.invoke(claim)
-    for doc in response:
-        doc.metadata.pop("bboxes", None)
-        doc.metadata["claim"] = claim
-    return ("RetrievedDocumentsForClaim", response)
-
-
 RETRIEVER_SYSTEM_PROMPT = (
     "You are a research assistant. Given a paragraph, dissect the paragraph into claims "
     "and use the retrieve_documents_for_claim tool to find 1 supporting document for EACH claim. "
     "Call the tool once per claim. Return all retrieved documents. "
     "Do not make up any claims, only use the ones that are stated in the paragraph."
-)
-
-model = ChatAnthropic(
-    model="claude-sonnet-4-20250514", temperature=0, max_tokens=1000, timeout=60
-)
-
-document_retriever_agent = create_agent(
-    model,
-    [retrieve_documents_for_claim],
-    system_prompt=RETRIEVER_SYSTEM_PROMPT,
 )
 
 CITATOR_SYSTEM_PROMPT = """You are a research assistant. Given a paragraph and a set of source documents, identify every claim in the paragraph that is supported by the provided documents.
@@ -65,6 +34,10 @@ Only produce citations for claims that are clearly supported by the provided doc
 You will return a structured list of Citation objects — one per supported claim.
 """
 
+model = ChatAnthropic(
+    model="claude-sonnet-4-20250514", temperature=0, max_tokens=1000, timeout=60
+)
+
 citator_agent = create_agent(
     model,
     system_prompt=CITATOR_SYSTEM_PROMPT,
@@ -72,11 +45,33 @@ citator_agent = create_agent(
 )
 
 
-def invoke_retriever(paragraph: str):
-    """Invoke the retriever agent. Returns a list of retrieved documents."""
-    result = document_retriever_agent.invoke(
-        {"messages": [{"role": "user", "content": paragraph}]}
+def _make_retrieve_tool(vector_store):
+    """Create a retrieve_documents_for_claim tool scoped to the given vector store."""
+
+    @tool(
+        description="Retrieve top k documents for a given claim from the vector store",
+        args_schema=retrieve_documents_for_claim_schema,
+        response_format="content_and_artifact",
     )
+    def retrieve_documents_for_claim(claim: str, k: int):
+        retriever = vector_store.as_retriever(
+            search_type="similarity_score_threshold",
+            search_kwargs={"k": k, "score_threshold": 0.5},
+        )
+        response = retriever.invoke(claim)
+        for doc in response:
+            doc.metadata.pop("bboxes", None)
+            doc.metadata["claim"] = claim
+        return ("RetrievedDocumentsForClaim", response)
+
+    return retrieve_documents_for_claim
+
+
+def invoke_retriever(paragraph: str, vector_store) -> list:
+    """Invoke the retriever agent with the given project-scoped vector store."""
+    retrieve_tool = _make_retrieve_tool(vector_store)
+    agent = create_agent(model, [retrieve_tool], system_prompt=RETRIEVER_SYSTEM_PROMPT)
+    result = agent.invoke({"messages": [{"role": "user", "content": paragraph}]})
     docs = []
     for msg in result["messages"]:
         if hasattr(msg, "artifact") and msg.artifact:
@@ -113,10 +108,7 @@ def invoke_citator(documents, paragraph) -> list[Citation]:
 
 
 def reconstruct_cited_paragraph(paragraph: str, citations: list[Citation]) -> str:
-    """Reconstruct the cited paragraph by inserting APA markers at citation end positions.
-
-    Inserts right-to-left so earlier offsets remain valid.
-    """
+    """Reconstruct the cited paragraph by inserting APA markers at citation end positions."""
     sorted_citations = sorted(citations, key=lambda c: c.end, reverse=True)
     result = paragraph
     for citation in sorted_citations:
