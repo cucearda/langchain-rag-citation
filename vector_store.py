@@ -20,7 +20,7 @@ def get_embeddings():
     )
 
 
-def get_vector_store():
+def get_vector_store(namespace: str = ""):
     pc = get_pinecone_client()
 
     if not pc.has_index(INDEX_NAME):
@@ -34,7 +34,7 @@ def get_vector_store():
     index = pc.Index(INDEX_NAME)
     embeddings = get_embeddings()
 
-    return PineconeVectorStore(index=index, embedding=embeddings)
+    return PineconeVectorStore(index=index, embedding=embeddings, namespace=namespace)
 
 def get_retriever(vector_store: PineconeVectorStore):
     retriever = vector_store.as_retriever(
