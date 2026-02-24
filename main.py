@@ -2,20 +2,28 @@
 import tempfile
 import os
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, File, HTTPException, Response, UploadFile
 from langchain_core.documents import Document
 from pinecone import Pinecone
 
 import firestore as fs
-from auth import get_current_user
+from auth import get_current_user, _ensure_firebase
 from document_loading import parse_pdf_with_grobid, split_chunks
 from firestore import get_db
 from models import ProjectCreateRequest, CitationRequest
 from vector_store import get_vector_store, INDEX_NAME, delete_document_chunks
 from agents import invoke_retriever, invoke_citator, reconstruct_cited_paragraph
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    _ensure_firebase()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 def delete_namespace(namespace: str) -> None:
