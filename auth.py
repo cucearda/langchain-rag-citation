@@ -26,5 +26,5 @@ async def get_current_user(authorization: str = Header(...)) -> dict:
     try:
         _ensure_firebase()
         return fa_auth.verify_id_token(token)
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=e["default_message"])

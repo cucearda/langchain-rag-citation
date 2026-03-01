@@ -1,6 +1,7 @@
 from typing import Optional
-
 from pydantic import BaseModel, Field
+from datetime import datetime
+
 
 
 class Chunk(BaseModel):
@@ -24,16 +25,19 @@ class Citation(BaseModel):
     source: CitationSource = Field(description="Metadata of the cited document")
     relevant_quote: str = Field(description="Verbatim excerpt from the source document that supports the claim")
     relevance_explanation: str = Field(description="Explanation of how this quote supports the claim in the paragraph")
+    citation_format: str = Field(description="The APA 7th edition in-text citation string to be inserted, e.g. '(Smith, 2021, p. 170)'")
 
 class CitatorResult(BaseModel):
     """Structured output of the citator agent."""
     citations: list[Citation] = Field(description="All citations found for the paragraph, one per supported claim")
 
 
-from datetime import datetime
+
+class CitationRequest(BaseModel):
+    paragraph: str
 
 
-class ProjectCreate(BaseModel):
+class ProjectCreateRequest(BaseModel):
     name: str
 
 
@@ -48,4 +52,6 @@ class DocumentMeta(BaseModel):
     id: str
     filename: str
     chunks_indexed: int
+    authors: str
+    year: str
     created_at: datetime

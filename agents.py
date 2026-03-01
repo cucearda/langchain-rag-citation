@@ -28,6 +28,7 @@ For each supported claim:
 2. State why you chose this source for this claim.
 3. Copy a verbatim excerpt from the source document that directly supports the claim.
 4. Explain how that excerpt supports the claim.
+5. Produce an APA 7th edition in-text citation string for the citation_format field. Use the format "(Author, Year, p. X)" when a page number is available, or "(Author, Year)" when it is not. Use only the first author's last name.
 
 Only produce citations for claims that are clearly supported by the provided documents. Do not invent citations.
 
@@ -112,7 +113,5 @@ def reconstruct_cited_paragraph(paragraph: str, citations: list[Citation]) -> st
     sorted_citations = sorted(citations, key=lambda c: c.end, reverse=True)
     result = paragraph
     for citation in sorted_citations:
-        first_author = citation.source.authors.split(",")[0].strip()
-        apa_marker = f" ({first_author}, {citation.source.year})"
-        result = result[:citation.end] + apa_marker + result[citation.end:]
+        result = result[:citation.end] + f" {citation.citation_format}" + result[citation.end:]
     return result
