@@ -3,11 +3,11 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pinecone import Pinecone
 
-import firestore as fs
-from auth import get_current_user
-from firestore import get_db
+import infra.firestore as fs
+from infra.auth import get_current_user
+from infra.firestore import get_db
 from models import ProjectCreateRequest
-from vector_store import INDEX_NAME
+from infra.vector_store import INDEX_NAME
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
