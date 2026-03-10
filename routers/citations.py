@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-import firestore as fs
-from agents import invoke_citator, invoke_retriever, reconstruct_cited_paragraph
-from auth import get_current_user
-from firestore import get_db
+import infra.firestore as fs
+from services.agents import invoke_citator, invoke_retriever, reconstruct_cited_paragraph
+from infra.auth import get_current_user
+from infra.firestore import get_db
 from models import CitationRequest
-from vector_store import get_vector_store
+from infra.vector_store import get_vector_store
 
 router = APIRouter(prefix="/projects", tags=["citations"])
 
