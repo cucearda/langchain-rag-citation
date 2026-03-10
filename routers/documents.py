@@ -6,11 +6,11 @@ from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFil
 from langchain_core.documents import Document
 from pinecone import Pinecone
 
-import firestore as fs
-from auth import get_current_user
-from document_loading import parse_pdf_with_grobid, split_chunks
-from firestore import get_db
-from vector_store import INDEX_NAME, delete_document_chunks, get_vector_store
+import infra.firestore as fs
+from infra.auth import get_current_user
+from services.document_loading import parse_pdf_with_grobid, split_chunks
+from infra.firestore import get_db
+from infra.vector_store import INDEX_NAME, delete_document_chunks, get_vector_store
 
 router = APIRouter(prefix="/projects", tags=["documents"])
 
