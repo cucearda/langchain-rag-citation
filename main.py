@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from auth import _ensure_firebase
+from infra.auth import _ensure_firebase
 from routers import citations, documents, projects
 
 
