@@ -10,9 +10,11 @@ A RAG-based API that automatically inserts APA 7th edition in-text citations int
 
 **Key components:**
 - `main.py` — FastAPI app with `/upload-document` and `/get-citations` endpoints
-- `agents.py` — Two LangChain agents: `document_retriever_agent` (finds supporting docs per claim) and `citator_agent` (inserts APA citations)
-- `document_loading.py` — GROBID-based PDF parsing + tiktoken chunking (1500 tokens, 300 overlap)
-- `vector_store.py` — Pinecone vector store using VoyageAI `voyage-4-lite` embeddings (1024 dimensions, cosine similarity)
+- `services/agents.py` — Two LangChain agents: `document_retriever_agent` (finds supporting docs per claim) and `citator_agent` (inserts APA citations)
+- `services/document_loading.py` — GROBID-based PDF parsing + tiktoken chunking (1500 tokens, 300 overlap)
+- `infra/vector_store.py` — Pinecone vector store using VoyageAI `voyage-4-lite` embeddings (1024 dimensions, cosine similarity)
+- `infra/auth.py` — Firebase Auth middleware
+- `infra/firestore.py` — Firestore client and helpers
 - `models.py` — Pydantic models for API requests/responses
 - `docker-compose.yml` — GROBID service (`lfoppiano/grobid:0.8.2-crf` on port 8070)
 
