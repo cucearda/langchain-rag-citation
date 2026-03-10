@@ -8,8 +8,8 @@ MOCK_USER = {"uid": "user-123", "email": "test@example.com"}
 
 
 def make_client(app):
-    from auth import get_current_user
-    from firestore import get_db
+    from infra.auth import get_current_user
+    from infra.firestore import get_db
     app.dependency_overrides[get_current_user] = lambda: MOCK_USER
     app.dependency_overrides[get_db] = lambda: MagicMock()
     return TestClient(app, raise_server_exceptions=False)
