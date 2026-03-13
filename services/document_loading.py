@@ -6,7 +6,8 @@ from langchain_community.document_loaders.parsers import GrobidParser
 from langchain_text_splitters import CharacterTextSplitter
 from models import Chunk
 
-GROBID_URL = "http://localhost:8070/api/processFulltextDocument"
+_grobid_base = os.getenv("GROBID_URL", "http://localhost:8070")
+GROBID_URL = f"{_grobid_base.rstrip('/')}/api/processFulltextDocument"
 
 
 def _extract_header_metadata(soup: BeautifulSoup) -> dict:
