@@ -1,4 +1,5 @@
 # auth.py
+import json
 import os
 
 import firebase_admin
@@ -14,7 +15,16 @@ _initialized = False
 def _ensure_firebase():
     global _initialized
     if not _initialized:
-        cred = firebase_admin.credentials.Certificate(os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH"))
+        # Production: set FIREBASE_SERVICE_ACCOUNT_JSON to the full contents of the service account JSON
+        sa_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+        # Local: set FIREBASE_SERVICE_ACCOUNT_PATH to the path of the service account JSON file
+        sa_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
+        if sa_json:
+            cred = firebase_admin.credentials.Certificate(json.loads(sa_json))
+        elif sa_path:
+            cred = firebase_admin.credentials.Certificate(sa_path)
+        else:
+            raise RuntimeError("No Firebase credentials provided")
         firebase_admin.initialize_app(cred)
         _initialized = True
 
