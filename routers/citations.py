@@ -25,12 +25,12 @@ async def get_citations(
     vector_store = get_vector_store(namespace=project["namespace"])
 
     try:
-        retrieved_docs = invoke_retriever(request.paragraph, vector_store)
+        retrieved_docs = await invoke_retriever(request.paragraph, vector_store)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Retriever agent failed: {e}")
 
     try:
-        citation_list = invoke_citator(retrieved_docs, request.paragraph)
+        citation_list = await invoke_citator(retrieved_docs, request.paragraph)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Citator agent failed: {e}")
 

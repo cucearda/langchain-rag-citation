@@ -68,11 +68,11 @@ def _make_retrieve_tool(vector_store):
     return retrieve_documents_for_claim
 
 
-def invoke_retriever(paragraph: str, vector_store) -> list:
+async def invoke_retriever(paragraph: str, vector_store) -> list:
     """Invoke the retriever agent with the given project-scoped vector store."""
     retrieve_tool = _make_retrieve_tool(vector_store)
     agent = create_agent(model, [retrieve_tool], system_prompt=RETRIEVER_SYSTEM_PROMPT)
-    result = agent.invoke({"messages": [{"role": "user", "content": paragraph}]})
+    result = await agent.ainvoke({"messages": [{"role": "user", "content": paragraph}]})
     docs = []
     for msg in result["messages"]:
         if hasattr(msg, "artifact") and msg.artifact:
@@ -80,7 +80,7 @@ def invoke_retriever(paragraph: str, vector_store) -> list:
     return docs
 
 
-def invoke_citator(documents, paragraph) -> list[Citation]:
+async def invoke_citator(documents, paragraph) -> list[Citation]:
     """Invoke the citator agent. Returns a list of Citation objects."""
     document_messages = []
     seen_ids = set()
@@ -100,7 +100,7 @@ def invoke_citator(documents, paragraph) -> list[Citation]:
             ),
         })
 
-    result = citator_agent.invoke({"messages": [
+    result = await citator_agent.ainvoke({"messages": [
         *document_messages,
         {"role": "system", "content": CITATOR_SYSTEM_PROMPT},
         {"role": "user", "content": f"Paragraph: {paragraph}"},

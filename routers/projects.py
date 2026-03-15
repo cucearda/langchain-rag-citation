@@ -1,7 +1,10 @@
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pinecone import Pinecone
+
+logger = logging.getLogger(__name__)
 
 import infra.firestore as fs
 from infra.auth import get_current_user
@@ -57,6 +60,14 @@ async def delete_project(
     project = fs.get_project(db, uid, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    delete_namespace(project["namespace"])
-    fs.delete_project(db, uid, project_id)
+    try:
+        delete_namespace(project["namespace"])
+    except Exception as e:
+        logger.error("Failed to delete Pinecone namespace %s: %s", project["namespace"], e)
+
+    try:
+        fs.delete_project(db, uid, project_id)
+    except Exception as e:
+        raise HTTPException(status_code=e.status, details="Failed to delete fs project")
+
     return Response(status_code=204)
