@@ -36,14 +36,10 @@ You will return a structured list of Citation objects — one per supported clai
 """
 
 model = ChatAnthropic(
-    model="claude-sonnet-4-20250514", temperature=0, max_tokens=1000, timeout=60
+    model="claude-sonnet-4-20250514", temperature=0, max_tokens=4096, timeout=60
 )
 
-citator_agent = create_agent(
-    model,
-    system_prompt=CITATOR_SYSTEM_PROMPT,
-    response_format=CitatorResult,
-)
+citator_model = model.with_structured_output(CitatorResult)
 
 
 def _make_retrieve_tool(vector_store):
@@ -100,12 +96,12 @@ async def invoke_citator(documents, paragraph) -> list[Citation]:
             ),
         })
 
-    result = await citator_agent.ainvoke({"messages": [
+    result = await citator_model.ainvoke([
         *document_messages,
         {"role": "system", "content": CITATOR_SYSTEM_PROMPT},
         {"role": "user", "content": f"Paragraph: {paragraph}"},
-    ]})
-    return result["structured_response"].citations
+    ])
+    return result.citations
 
 
 def reconstruct_cited_paragraph(paragraph: str, citations: list[Citation]) -> str:
