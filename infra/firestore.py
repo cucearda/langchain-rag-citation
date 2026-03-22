@@ -2,20 +2,23 @@
 import os
 from datetime import datetime, timezone
 
-import firebase_admin
+from fastapi import Request
 from firebase_admin import firestore as firebase_firestore
 from dotenv import load_dotenv
+from typer.cli import app
 
 load_dotenv()
 
 
-def get_db():
+def get_db(request: Request):
     """Return the Firestore client. Requires Firebase Admin SDK to be initialized first."""
+    return request.app.state.db
+
+def initialize_db():
     client = firebase_firestore.client()
     return client
 
-
-# ── User ──────────────────────────────────────────────────────────────────────
+# ── User ─────────────────────────────────────────────────────────────────────
 
 def ensure_user_exists(db, user_id: str, email: str) -> None:
     """Create a user document if it doesn't already exist."""

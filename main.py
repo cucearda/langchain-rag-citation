@@ -6,13 +6,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from infra.auth import _ensure_firebase
 from routers import citations, documents, projects
+from infra.firestore import initialize_db
 
 
+firebase_client = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _ensure_firebase()
+    app.state.db = initialize_db()
     yield
-
 
 app = FastAPI(lifespan=lifespan)
 
