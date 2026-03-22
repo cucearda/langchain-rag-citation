@@ -4,10 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi import Request
 from firebase_admin import firestore as firebase_firestore
-from dotenv import load_dotenv
 from typer.cli import app
-
-load_dotenv()
 
 
 def get_db(request: Request):
@@ -20,11 +17,11 @@ def initialize_db():
 
 # ── User ─────────────────────────────────────────────────────────────────────
 
-def ensure_user_exists(db, user_id: str, email: str) -> None:
-    """Create a user document if it doesn't already exist."""
+def ensure_user_exists(db, user_id: str) -> None:
+    """If user document doesn't exist, return error"""
     ref = db.collection("users").document(user_id)
     if not ref.get().exists:
-        ref.set({"email": email, "created_at": datetime.now(timezone.utc)})
+        raise ValueError("User not found")
 
 
 # ── Projects ──────────────────────────────────────────────────────────────────

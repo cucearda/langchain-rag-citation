@@ -29,7 +29,7 @@ async def create_project(
     db=Depends(get_db),
 ):
     uid = user["uid"]
-    fs.ensure_user_exists(db, uid, user.get("email", ""))
+    fs.ensure_user_exists(db, uid)
     project_namespace = str(uuid.uuid4())
     try:
         fs.create_project(db, uid, project_namespace, body.name)
@@ -46,7 +46,7 @@ async def list_projects(
     db=Depends(get_db),
 ):
     uid = user["uid"]
-    fs.ensure_user_exists(db, uid, user.get("email", ""))
+    fs.ensure_user_exists(db, uid)
     return fs.list_projects(db, uid)
 
 

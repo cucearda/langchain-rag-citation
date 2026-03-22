@@ -2,7 +2,7 @@ import os
 import tempfile
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile
 from langchain_core.documents import Document
 from pinecone import Pinecone
 
@@ -10,13 +10,14 @@ import infra.firestore as fs
 from infra.auth import get_current_user
 from services.document_loading import parse_pdf_with_grobid, split_chunks
 from infra.firestore import get_db
-from infra.vector_store import INDEX_NAME, delete_document_chunks, get_vector_store
+from infra.vector_store import INDEX_NAME, delete_document_chunks, get_vector_store_by_namespace
 
 router = APIRouter(prefix="/projects", tags=["documents"])
 
 
 @router.post("/{project_name}/documents", status_code=201)
 async def upload_document(
+    request: Request,
     project_name: str,
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user),
@@ -26,6 +27,10 @@ async def upload_document(
     project = fs.get_project(db, uid, project_name)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+    try:
+        vector_store =  get_vector_store_by_namespace(namespace=project["namespace"], embeddings=request.app.state.embeddings, index=request.app.state.vector_store_index)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error initializing vector store: {e}")
 
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         tmp.write(await file.read())
@@ -36,7 +41,6 @@ async def upload_document(
         chunks = split_chunks(docs)
         document_id = str(uuid.uuid4())
 
-        vector_store = get_vector_store(namespace=project["namespace"])
         documents = []
         for chunk in chunks:
             chunk.metadata["doc_id"] = document_id

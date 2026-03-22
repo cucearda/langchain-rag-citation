@@ -1,6 +1,7 @@
 import os
 
 from dotenv import load_dotenv
+from fastapi import HTTPException, Request
 from langchain_pinecone import PineconeVectorStore
 from langchain_voyageai import VoyageAIEmbeddings
 from pinecone import Pinecone, ServerlessSpec
@@ -19,8 +20,7 @@ def get_embeddings():
         voyage_api_key=os.getenv("VOYAGE_API_KEY"), model="voyage-4-lite"
     )
 
-
-def get_vector_store(namespace: str = ""):
+def initialize_vector_store_index():
     pc = get_pinecone_client()
 
     if not pc.has_index(INDEX_NAME):
@@ -30,11 +30,13 @@ def get_vector_store(namespace: str = ""):
             metric="cosine",
             spec=ServerlessSpec(cloud="aws", region="us-east-1"),
         )
+    return pc.Index(INDEX_NAME)
 
-    index = pc.Index(INDEX_NAME)
-    embeddings = get_embeddings()
-
-    return PineconeVectorStore(index=index, embedding=embeddings, namespace=namespace)
+def get_vector_store_by_namespace(embeddings: VoyageAIEmbeddings, index: Pinecone, namespace: str = ""):
+    try:
+        return PineconeVectorStore(index=index, embedding=embeddings, namespace=namespace)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error initializing vector store: {e}")
 
 def get_retriever(vector_store: PineconeVectorStore):
     retriever = vector_store.as_retriever(
